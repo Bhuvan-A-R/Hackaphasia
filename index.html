@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MediAssist — Chat Assistant Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://kit.fontawesome.com/e2a3abf3e6.js" crossorigin="anonymous"></script>
+    <style>
+        /* Custom scrollbar for the chat area */
+        .chat-scroll {
+            max-height: 56vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f1f5e9;
+        }
+
+        .chat-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-scroll::-webkit-scrollbar-track {
+            background: #f1f5e9;
+            border-radius: 10px;
+        }
+
+        .chat-scroll::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+            border: 2px solid #f1f5e9;
+        }
+
+        /* CSS Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .message-animation {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        .option-animation {
+            animation: popIn 0.3s ease-out forwards;
+        }
+    </style>
+    <script defer>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('mobile-menu-button');
+            const menu = document.getElementById('mobile-menu');
+            btn.addEventListener('click', () => menu.classList.toggle('hidden'));
+        });
+    </script>
+</head>
+
+<body class="bg-gray-50">
+    <header class="sticky top-0 z-50 w-full h-full border-b bg-white shadow-sm">
+        <div class="max-w-6xl mx-auto flex h-16 items-center justify-between px-4">
+            <a href="/" class="flex items-center gap-2">
+                <i class="fa-solid fa-house-medical text-2xl text-sky-400"></i>
+                <span class="font-bold text-lg">MediAssist</span>
+            </a>
+
+            <nav class="hidden md:flex gap-6">
+                <a href="/symptom-checker.html" class="text-sm font-medium hover:text-blue-600">Symptom Triage</a>
+                <a href="/health-guidance.html" class="text-sm font-medium hover:text-blue-600">Health Guidance</a>
+                <a href="/service-locator.html" class="text-sm font-medium hover:text-blue-600">Service Locator</a>
+                <a href="/emergency.html" class="text-sm font-medium hover:text-blue-600">Emergency</a>
+            </nav>
+
+            <div class="flex items-center gap-4">
+                <button class="hidden md:inline-flex p-2 hover:bg-gray-100 rounded-full" aria-label="Language">
+                    <i class="fa-solid fa-globe text-xl"></i>
+                </button>
+
+                <button id="mobile-menu-button" class="md:hidden p-2 hover:bg-gray-100 rounded-md"
+                    aria-label="Open menu">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-200">
+            <nav class="flex flex-col p-4 space-y-3">
+                <a href="/symptom-checker.html" class="text-sm font-medium hover:text-blue-600">Symptom Triage</a>
+                <a href="/health-guidance.html" class="text-sm font-medium hover:text-blue-600">Health Guidance</a>
+                <a href="/service-locator.html" class="text-sm font-medium hover:text-blue-600">Service Locator</a>
+                <a href="/emergency.html" class="text-sm font-medium hover:text-blue-600">Emergency</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="max-w-3xl w-full mx-auto bg-white rounded-xl shadow p-6 flex flex-col h-full mt-8">
+        <header class="flex items-center gap-3 pb-4 border-b">
+            <div class="rounded-full bg-sky-100 p-2 text-sky-600">
+                <i class="fas fa-notes-medical text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg text-gray-800">MediAssist — Virtual Health Assistant</h1>
+                <p class="text-xs text-gray-500">AI-enabled triage, health guidance and service locator (demo)</p>
+            </div>
+            <button id="restart-btn" class="ml-auto text-xs flex items-center gap-1 px-3 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors">
+    <i class="fas fa-sync-alt"></i> Restart
+</button>
+        </header>
+
+        <main class="mt-4 flex-1 flex flex-col">
+            <div id="chat" class="chat-scroll space-y-3 p-3 bg-gray-50 rounded-md">
+            </div>
+
+            <div id="quick-replies" class="mt-3 flex flex-wrap gap-2"></div>
+
+            <p class="mt-3 text-xs text-gray-400">
+                This is a client-side demo. To make it real: connect the JS to a backend AI (OpenAI or similar) and
+                to secure, permissioned service locators.
+            </p>
+        </main>
+    </div>
+
+    <script>
+        const chatEl = document.getElementById('chat');
+        const quick = document.getElementById('quick-replies');
+        const restartBtn = document.getElementById('restart-btn');
+
+        const TOP_OPTIONS = [{
+            id: 'medical_guidance',
+            label: 'Medical Guidance'
+        }, {
+            id: 'service_locator',
+            label: 'Service Locator'
+        }, {
+            id: 'emergency',
+            label: 'Emergency Contact'
+        }];
+
+        const DURATION_OPTIONS = [{
+            label: 'less than 3 days'
+        }, {
+            label: 'greater than 3 days'
+        }];
+
+        function renderQuickReplies(items) {
+            quick.innerHTML = '';
+            items.forEach((item, index) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.classList.add('px-3', 'py-1', 'bg-white', 'border', 'rounded-full', 'text-sm', 'shadow-sm', 'hover:bg-sky-50', 'option-animation', 'transition-colors');
+                btn.style.animationDelay = `${0.1 * index}s`;
+                btn.textContent = item.label;
+                btn.onclick = () => handleUserAction(item.label, item.id);
+                quick.appendChild(btn);
+            });
+        }
+
+        function appendMessage(sender, text) {
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('flex', 'message-animation');
+            wrapper.style.animationDelay = '0.2s';
+            wrapper.style.opacity = '0';
+            wrapper.style.animationFillMode = 'forwards';
+
+            if (sender === 'user') {
+                wrapper.classList.add('justify-end');
+            } else {
+                wrapper.classList.add('justify-start');
+            }
+
+            const bubble = document.createElement('div');
+            bubble.classList.add('rounded-lg', 'p-3', 'shadow', 'text-sm');
+
+            if (sender === 'user') {
+                bubble.classList.add('bg-sky-600', 'text-white');
+                bubble.innerHTML = `<div class="whitespace-pre-line">${text.trim()}</div>`;
+            } else {
+                bubble.classList.add('bg-white', 'text-gray-700');
+                if (text === 'open_map') {
+                    bubble.innerHTML = `<strong>MediAssist:</strong><div class="mt-2 text-gray-600">Opening a map with nearby clinics...</div>`;
+                    window.open('https://www.google.com/maps/search/clinics+near+me', '_blank');
+                } else if (text === 'emergency_contact') {
+                    bubble.innerHTML = `<strong>MediAssist:</strong><div class="mt-2 text-gray-600">Please contact emergency services immediately by calling 911 or your local emergency number.</div>`;
+                } else {
+                    bubble.innerHTML = `<strong>MediAssist:</strong><div class="mt-2 text-gray-600 whitespace-pre-line">${text.trim()}</div>`;
+                }
+            }
+
+            wrapper.appendChild(bubble);
+            chatEl.appendChild(wrapper);
+            chatEl.scrollTop = chatEl.scrollHeight;
+        }
+
+        async function handleUserAction(text, id = null) {
+            appendMessage('user', text);
+            const response = await sendToChatbotAPI(text);
+            appendMessage('assistant', response);
+
+            if (response.includes("Let's start with your medical guidance")) {
+                renderQuickReplies([]);
+            } else if (response.includes("gender (male/female)")) {
+                renderQuickReplies([{
+                    label: 'Male'
+                }, {
+                    label: 'Female'
+                }]);
+            } else if (response.includes("duration of your symptoms")) {
+                renderQuickReplies(DURATION_OPTIONS);
+            } else {
+                renderQuickReplies(TOP_OPTIONS);
+            }
+        }
+
+        async function sendToChatbotAPI(message) {
+            try {
+                const typingIndicator = document.createElement('div');
+                typingIndicator.innerHTML = '<p class="text-gray-400 text-sm">MediAssist is typing...</p>';
+                chatEl.appendChild(typingIndicator);
+                chatEl.scrollTop = chatEl.scrollHeight;
+
+                const response = await fetch('http://127.0.0.1:5000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: message
+                    })
+                });
+
+                chatEl.removeChild(typingIndicator);
+                const data = await response.json();
+                return data.response;
+            } catch (error) {
+                console.error('API Error:', error);
+                return "I'm sorry, I am unable to connect to my services right now. Please try again later.";
+            }
+        }
+
+        async function restartChat() {
+            // Clear chat messages
+            chatEl.innerHTML = '';
+            // Send a request to the backend to clear the session
+            await fetch('http://127.0.0.1:5000/', {
+                method: 'GET' // The Flask endpoint is a GET request to the root URL
+            });
+            // Re-initialize the chat interface
+            window.onload();
+        }
+
+        // Add event listener to the restart button
+        restartBtn.addEventListener('click', restartChat);
+
+        // Event listener for the input field to handle typing
+        const textInput = document.createElement('input');
+        textInput.type = 'text';
+        textInput.placeholder = 'Type your message...';
+        textInput.classList.add('w-full', 'px-4', 'py-3', 'mt-4', 'border', 'border-gray-300', 'rounded-md', 'focus:ring-2', 'focus:ring-sky-500', 'focus:border-sky-500', 'transition-all', 'duration-200');
+        textInput.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter') {
+                const text = textInput.value.trim();
+                if (text) {
+                    textInput.value = '';
+                    handleUserAction(text);
+                }
+            }
+        });
+        document.querySelector('main').appendChild(textInput);
+
+        window.onload = () => {
+            appendMessage('assistant', "Hello — I can help with symptom triage, basic health guidance, or finding nearby humanitarian health services. Pick an option or type your question.");
+            renderQuickReplies(TOP_OPTIONS);
+        };
+    </script>
+</body>
+
+</html>
